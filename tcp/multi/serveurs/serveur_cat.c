@@ -1,30 +1,41 @@
 #include "utils/utils.h"
 #include "services/services.h"
 
+int sock;
+
 void *connection_handler(void *sockets)
 {
     int *s = (int *)sockets;
     int service_fd = s[0];
     int sock = s[1];
     free(sockets);
-
+    LOG_INFO("Proxy connected.");
     msg message = {0};
     char *args[2] = {0};
-
     safe_rcv(service_fd, sock, &message);
-
-    size_t args_count = get_args_from_buff(service_fd, sock, message.buff, args, sizeof(args) / sizeof(args[0]));
+    LOG_INFO("Proxy routed message from client <%d>.", message.client_id);
+    size_t max_args_size = sizeof(args) / sizeof(args[0]);
+    size_t args_size = get_args_from_buff(service_fd, sock, message.buff, args, max_args_size);
     get_contenu_fichier(args[0], message.buff);
     safe_send(service_fd, sock, &message);
-
     close(service_fd);
     pthread_exit(NULL);
     return NULL;
 }
 
+void graceful_shutdown()
+
+{
+    LOG_CRITICAL("Interruption deteced. Shutting down...");
+    close(sock);
+    exit(EXIT_FAILURE);
+}
+
 int main()
 {
-    int sock = safe_socket();
+
+    sock = safe_socket();
+    signal(SIGINT, graceful_shutdown);
     safe_setsockopt(sock);
     struct sockaddr_in server_addr = {0};
     server_addr.sin_family = AF_INET;
@@ -46,8 +57,6 @@ int main()
             perror("accept failed");
             continue;
         }
-
-               LOG_INFO("Client with addr %s connected\n", inet_ntoa(client_addr.sin_addr));
 
         int *sockets = malloc(sizeof(int) * 2);
         if (!sockets)

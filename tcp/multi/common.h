@@ -1,7 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -25,11 +24,13 @@
 #define LS_PORT 5083
 #define DUREE_PORT 5084
 
-typedef struct 
+typedef struct
 
 {
+    int client_id;
     int op;
     char buff[4096];
-}msg;
+    struct timespec client_connection_time;
+} msg;
 
 #endif

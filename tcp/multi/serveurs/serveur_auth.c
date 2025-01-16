@@ -1,6 +1,8 @@
 #include "utils/utils.h"
 #include "services/services.h"
 
+int sock;
+
 void *connection_handler(void *sockets)
 {
     int *s = (int *)sockets;
@@ -9,12 +11,12 @@ void *connection_handler(void *sockets)
     free(sockets);
 
     msg message = {0};
+    
     char *args[2] = {0};
 
     while (true)
     {
         safe_rcv(service_fd, sock, &message);
-        printf("%s \n", message.buff);
         size_t max_args_size = sizeof(args) / sizeof(args[0]);
         size_t args_size = get_args_from_buff(service_fd, sock, message.buff, args, max_args_size);
         if (authentification(args[0], args[1]))
@@ -23,7 +25,7 @@ void *connection_handler(void *sockets)
     }
 
     message.op = 0;
-    LOG_INFO("Client Authenticated Successfully!");
+    LOG_INFO("Client <%d> Authenticated Successfully!", message.client_id);
 
     // Send Menu
     snprintf(message.buff, sizeof(message.buff),
@@ -35,21 +37,28 @@ void *connection_handler(void *sockets)
              "\n5. Quitter"
              "\n================================");
     safe_send(service_fd, sock, &message);
-
     close(service_fd);
     pthread_exit(NULL);
     return NULL;
 }
 
+void graceful_shutdown()
+
+{
+    LOG_CRITICAL("Interruption deteced. Shutting down...");
+    close(sock);
+    exit(EXIT_FAILURE);
+}
+
 int main()
 {
-    int sock = safe_socket();
+    sock = safe_socket();
     safe_setsockopt(sock);
     struct sockaddr_in server_addr = {0};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(AUTH_PORT);
     server_addr.sin_addr.s_addr = INADDR_ANY;
-
+    signal(SIGINT, graceful_shutdown);
     safe_bind(sock, &server_addr);
     safe_listen(sock, 10);
 

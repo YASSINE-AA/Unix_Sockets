@@ -31,10 +31,11 @@ void *connection_handler(void *sockets)
     int *s = (int *)sockets;
     int service_fd = s[0];
     int sock = s[1];
-    int client_id = active_clients;
+
     free(sockets); 
 
     pthread_mutex_lock(&client_mutex);
+        int client_id = active_clients;
     get_time_taken(false, NULL, client_id); // Set start time
     pthread_mutex_unlock(&client_mutex);
 

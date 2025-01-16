@@ -93,21 +93,17 @@ void get_contenu_fichier(char *file_name, char *buff)
     __exec_cmd(args, buff);
 }
 
-void get_time_taken(bool capture, char* buff, int client_id)
+void get_time_taken(struct timespec *start_time, char *buff)
 {
-    static struct timespec start_times[10] = {0};
-    double time_taken;
-    if (!capture)
-    {
-        clock_gettime(CLOCK_MONOTONIC, &start_times[client_id]);
-        return;
-    }
-
     struct timespec end_time = {0};
     clock_gettime(CLOCK_MONOTONIC, &end_time);
 
-    time_taken = (end_time.tv_sec - start_times[client_id].tv_sec) +
-                 (end_time.tv_nsec - start_times[client_id].tv_nsec) / 1e9;
+    double time_taken = (end_time.tv_sec - start_time->tv_sec) +
+                        (end_time.tv_nsec - start_time->tv_nsec) / 1e9;
 
-    if(buff) snprintf(buff, 4096, "%lfs", time_taken);
+    if (buff)
+    {
+        memset(buff, 0, 4096);
+        sprintf(buff, "%lfs", time_taken);
+    }
 }

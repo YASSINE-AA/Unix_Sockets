@@ -1,19 +1,31 @@
 #include "utils/utils.h"
 
+int sock;
+
+void graceful_shutdown()
+{
+    msg message = {0};
+    message.op = 5;
+    safe_send(sock, -1, &message);
+    close(sock);
+    exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char *argv[])
 {
-    int sock = safe_socket();
-
+    sock = safe_socket();
     struct sockaddr_in auth_server_addr = {0};
     auth_server_addr.sin_family = AF_INET;
     auth_server_addr.sin_port = htons(PROXY_PORT);
     auth_server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
+    signal(SIGINT, graceful_shutdown);
     // Connect to Auth Server
     safe_connect(sock, &auth_server_addr);
 
     msg message = {0};
     message.op = -1;
+    message.client_id = -1;
+//    message.client_connection_time = (struct timespec) {0};
     while (message.op < 0)
     {
         // Authenticate
@@ -47,7 +59,7 @@ int main(int argc, char *argv[])
         // Choose service
         printf("\nRun: ");
         scanf("%d", &message.op);
-        
+
         if (message.op == 5)
         {
             safe_send(sock, -1, &message); // send client termination

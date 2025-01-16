@@ -1,32 +1,23 @@
 #include "utils/utils.h"
 #include "services/services.h"
 
-int active_clients = 0;
-pthread_mutex_t client_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 void *connection_handler(void *sockets)
 {
     int *s = (int *)sockets;
     int service_fd = s[0];
     int sock = s[1];
-    int client_id = active_clients;
-    free(sockets);
 
-    pthread_mutex_lock(&client_mutex);
-    get_time_taken(false, NULL, client_id); // Set start time
-    pthread_mutex_unlock(&client_mutex);
+    free(sockets);
 
     msg message = {0};
     char *args[2] = {0};
 
     safe_rcv(service_fd, sock, &message);
-    size_t args_count = get_args_from_buff(service_fd, sock, message.buff, args, sizeof(args) / sizeof(args[0]));
-    get_time_taken(true, message.buff, client_id);
-    safe_send(service_fd, sock, &message);
 
-    pthread_mutex_lock(&client_mutex);
-    active_clients--;
-    pthread_mutex_unlock(&client_mutex);
+    LOG_INFO("Proxy routed message from client <%d>.", message.client_id);
+    size_t args_count = get_args_from_buff(service_fd, sock, message.buff, args, sizeof(args) / sizeof(args[0]));
+    get_time_taken(&message.client_connection_time, message.buff);
+    safe_send(service_fd, sock, &message);
 
     close(service_fd);
     pthread_exit(NULL);
@@ -57,11 +48,6 @@ int main()
             perror("accept failed");
             continue;
         }
-
-        pthread_mutex_lock(&client_mutex);
-        active_clients++;
-        LOG_INFO("Active clients: %d", active_clients);
-        pthread_mutex_unlock(&client_mutex);
 
         LOG_INFO("Client with addr %s connected\n", inet_ntoa(client_addr.sin_addr));
 
