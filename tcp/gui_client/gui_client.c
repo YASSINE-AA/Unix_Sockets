@@ -22,14 +22,14 @@
 // gcc utils/utils.c gui_client.c -o test -Igooey/include -Igooey/internal -L./gooey/lib -Wl,-rpath,\$ORIGIN/gooey/lib  -lGooeyGUI -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
 
 // GOOEY
-GooeyWindow win, result_window, auth_window;
+GooeyWindow win, result_window, auth_window, args_window;
 GooeyWindow msgBox_auth_success, msgbox_auth_failure;
 GooeyLayout *layout;
-GooeyTextbox *inputBox;
+GooeyTextbox *inputBox, *args_input_box;
 GooeyList *list, *result_list;
 GooeyTextbox *username_textbox;
 GooeyTextbox *password_textbox;
-char *date_result = "";
+int selected_op;
 
 // SOCKET
 int sock;
@@ -37,12 +37,20 @@ msg message = {0};
 
 void get_user_choice(int op)
 {
-    switch (op + 1)
+    selected_op = op + 1;
+    GooeyWindow_MakeVisible(&args_window, true);
+}
+
+void invoke_service()
+{
+
+    switch (selected_op)
     {
     case 1:
         // DATE
         message.op = 1;
         memset(message.buff, 0, 4096);
+        strcat(message.buff, GooeyTextbox_GetText(args_input_box));
         safe_send(sock, -1, &message);
         safe_rcv(sock, -1, &message);
         GooeyWindow_MakeVisible(&result_window, true);
@@ -57,7 +65,7 @@ void get_user_choice(int op)
         // LS
         message.op = 2;
         memset(message.buff, 0, 4096);
-        strcat(message.buff, ".");
+        strcat(message.buff, GooeyTextbox_GetText(args_input_box));
         safe_send(sock, -1, &message);
         safe_rcv(sock, -1, &message);
         GooeyWindow_MakeVisible(&result_window, true);
@@ -96,7 +104,7 @@ void get_user_choice(int op)
         // CAT
         message.op = 3;
         memset(message.buff, 0, 4096);
-        strcat(message.buff, "common.h");
+        strcat(message.buff, GooeyTextbox_GetText(args_input_box));
         safe_send(sock, -1, &message);
         safe_rcv(sock, -1, &message);
         GooeyWindow_MakeVisible(&result_window, true);
@@ -132,6 +140,8 @@ void get_user_choice(int op)
         // ELAPSED
         message.op = 4;
         memset(message.buff, 0, 4096);
+        strcat(message.buff, GooeyTextbox_GetText(args_input_box));
+
         safe_send(sock, -1, &message);
         safe_rcv(sock, -1, &message);
         GooeyWindow_MakeVisible(&result_window, true);
@@ -144,6 +154,9 @@ void get_user_choice(int op)
     default:
         break;
     }
+
+        GooeyWindow_MakeVisible(&args_window, false);
+
 }
 
 void client_connect()
@@ -198,14 +211,16 @@ int main()
 {
     Gooey_Init(GLFW);
     client_connect();
+
+    // WINDOWS
     win = GooeyWindow_Create("Sockets Client", 400, 300, true);
     auth_window = GooeyWindow_CreateChild("Authentication", 300, 260, true);
     result_window = GooeyWindow_CreateChild("Service Results", 400, 300, false);
-
-    result_list = GooeyList_Add(&result_window, 0, 0, 390, 300, NULL);
-
+    args_window = GooeyWindow_CreateChild("Pass Args", 300, 200, false);
     msgBox_auth_success = GooeyMessageBox_Create("Authenticated!", "You have been authenticated", MSGBOX_SUCCES, NULL);
     msgbox_auth_failure = GooeyMessageBox_Create("Error", "Cannot be authenticated, please retry.", MSGBOX_FAIL, NULL);
+
+    result_list = GooeyList_Add(&result_window, 0, 0, 390, 300, NULL);
 
     GooeyLayout *auth_layout = GooeyLayout_Create(&auth_window, LAYOUT_VERTICAL, 10, 40, 280, 300);
     GooeyLabel *auth_label = GooeyLabel_Add(&auth_window, "Authenticate client", 0.5f, 40, 40);
@@ -227,8 +242,19 @@ int main()
     list = GooeyList_Add(&win, 0, 0, 390, 300, get_user_choice);
     GooeyList_ShowSeparator(list, true);
 
-    GooeyWindow_Run(5, &win, &auth_window, &msgBox_auth_success, &msgbox_auth_failure, &result_window);
-    GooeyWindow_Cleanup(5, &win, &auth_window, &msgBox_auth_success, &msgbox_auth_failure, &result_window);
+    GooeyLayout *args_layout = GooeyLayout_Create(&args_window, LAYOUT_VERTICAL, 10, 40, 280, 200);
+    GooeyLabel *args_label = GooeyLabel_Add(&args_window, "Pass args to service", 0.5f, 40, 40);
+    GooeyButton *args_button = GooeyButton_Add(&args_window, "Invoke", 10, 0, 40, 40, invoke_service);
+
+    args_input_box = GooeyTextBox_Add(&args_window, 0, 0, 40, 40, "Args (seperated by ',')", NULL);
+
+    GooeyLayout_AddChild(args_layout, args_label);
+    GooeyLayout_AddChild(args_layout, args_input_box);
+    GooeyLayout_AddChild(args_layout, args_button);
+    GooeyLayout_Build(args_layout);
+
+    GooeyWindow_Run(6, &win, &auth_window, &msgBox_auth_success, &msgbox_auth_failure, &result_window, &args_window);
+    GooeyWindow_Cleanup(6, &win, &auth_window, &msgBox_auth_success, &msgbox_auth_failure, &result_window, &args_window);
 
     client_disconnect();
     return 0;

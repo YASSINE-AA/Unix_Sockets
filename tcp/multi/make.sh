@@ -6,12 +6,12 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "server" ]; then
-    gcc services/services.c utils/utils.c logger.c serveurs/serveur_auth.c -o serveur_auth -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
-    gcc services/services.c utils/utils.c logger.c serveurs/serveur_cat.c -o serveur_cat -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
-    gcc services/services.c utils/utils.c logger.c serveurs/serveur_date.c -o serveur_date -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
-    gcc services/services.c utils/utils.c logger.c serveurs/serveur_duree.c -o serveur_duree -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
-    gcc services/services.c utils/utils.c logger.c serveurs/serveur_ls.c -o serveur_ls -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
-    gcc services/services.c utils/utils.c logger.c proxy.c -o proxy -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined
+    gcc services/services.c utils/utils.c logger.c serveurs/serveur_auth.c -o serveur_auth -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined -lpthread
+    gcc services/services.c utils/utils.c logger.c serveurs/serveur_cat.c -o serveur_cat -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined -lpthread
+    gcc services/services.c utils/utils.c logger.c serveurs/serveur_date.c -o serveur_date -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined -lpthread
+    gcc services/services.c utils/utils.c logger.c serveurs/serveur_duree.c -o serveur_duree -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined -lpthread
+    gcc services/services.c utils/utils.c logger.c serveurs/serveur_ls.c -o serveur_ls -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined -lpthread
+    gcc services/services.c utils/utils.c logger.c proxy.c -o proxy -I./  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -g3 -fsanitize=address,undefined -lpthread
 
     echo "Target server built."
     exit 0
